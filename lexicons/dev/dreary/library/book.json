@@ -1,0 +1,49 @@
+{
+    "lexicon": 1,
+    "id": "dev.dreary.library.book",
+    "defs": {
+    "main": {
+    "type": "record",
+    "description": "Record representing a track.",
+    "key": "tid",
+    "record": {
+        "type": "object",
+        "required": ["title", "author", "createdAt"],
+        "properties": { 
+            "$type": "dev.dreary.library.book",
+            "title": { "type": "string" },
+            "authors": {
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "file": {
+                "type": "blob"
+            },
+            "thumbnail": {
+                "type": "object",
+                "required": ["image", "alt"],
+                "properties": {
+                    "image": {
+                        "type": "blob",
+                        "accept": ["image/*"]
+                    },
+                    "alt": { "type": "string" },
+                    "aspectRatio": {
+                        "type": "object",
+                        "required": ["width", "height"],
+                        "properties": {
+                            "width": { "type": "integer", "minimum": 1 },
+                            "height": { "type": "integer", "minimum": 1 }
+                        }
+                    }
+                }
+            },
+            "pageCount": { "type": "int" },
+            "description": { "type": "string" },
+            "publishYear": { "type": "string" },
+            "createdAt": { "type": "string", "format": "datetime" }
+        }
+    }
+    }
+    }
+}

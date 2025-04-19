@@ -1,0 +1,22 @@
+{
+    "lexicon": 1,
+    "id": "app.bsky.graph.playlist",
+    "defs": {
+    "main": {
+    "type": "record",
+    "description": "Record representing a track's inclusion on a specific list.",
+    "key": "tid",
+    "record": {
+        "type": "object",
+        "required": ["name", "createdAt"],
+        "properties": { 
+            "$type": "dev.dreary.tunes.playlistitem",
+            "playlist": { "type": "string", "format": "at-uri" },
+            "track": { "type": "string", "format": "at-uri" },
+            "createdAt": { "type": "string", "format": "datetime" },
+            "index": { "type": "int", "description": "Playlist position index" }
+        }
+    }
+    }
+    }
+}

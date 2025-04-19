@@ -1,2 +1,2 @@
 # dreary-lexicons
-personal lexicons and import scripts
+4fun. just playing around.

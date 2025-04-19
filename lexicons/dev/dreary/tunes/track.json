@@ -1,0 +1,32 @@
+{
+    "lexicon": 1,
+    "id": "dev.dreary.tunes.track",
+    "defs": {
+    "main": {
+    "type": "record",
+    "description": "Record representing a track.",
+    "key": "tid",
+    "record": {
+        "type": "object",
+        "required": ["title", "url", "createdAt"],
+        "properties": { 
+            "$type": "dev.dreary.tunes.track",
+            "title": { "type": "string" },
+            "uploader": {
+                "type": "object",
+                "name": { "type": "string" },
+                "id": { "type": "string" },
+                "url": { "type": "string" }
+            },
+            "thumbnail": { "type": "string", "format": "uri" },
+            "duration": { "type": "int", "format": "seconds" },
+            "description": { "type": "string" },
+            "lyrics": { "type": "string" },
+            "url": { "type": "string", "format": "link" },
+            "source": { "type": "string" },
+            "createdAt": { "type": "string", "format": "datetime" }
+        }
+    }
+    }
+    }
+}

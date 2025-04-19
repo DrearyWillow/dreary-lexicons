@@ -1,0 +1,36 @@
+{
+    "lexicon": 1,
+    "id": "dev.dreary.tunes.playlist",
+    "defs": {
+    "main": {
+    "type": "record",
+    "description": "Record representing a list of tracks.",
+    "key": "tid",
+    "record": {
+        "type": "object",
+        "required": ["name", "createdAt"],
+        "properties": { 
+            "$type": "dev.dreary.tunes.playlist",
+            "name": { "type": "string", "maxLength": 64, "minLength": 1 },
+            "description": { "type": "string", "maxLength": 3000 },
+            "dedicated": { "type": "string", "format": "did" },
+            "createdAt": { "type": "string", "format": "datetime" },
+            "thumbnail": { "type": "string", "format": "uri" },
+            "reference": {
+                "source": { "type": "string" },
+                "link": { "type": "string", "description": "External source playlist link." },
+                "id": { "type": "string" }
+            },
+            "tags": {
+                "type": "array",
+                "maxLength": 50,
+                "items": {
+                    "type": "string",
+                    "maxLength": 640
+                }
+            }
+        }
+    }
+    }
+    }
+}
