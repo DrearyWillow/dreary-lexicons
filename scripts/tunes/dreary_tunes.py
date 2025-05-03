@@ -16,19 +16,15 @@ class BandcampJSON:
         self.json_data = []
 
     def generate(self):
-        """Grabbing needed data from the page"""
         self.get_pagedata()
         self.get_js()
         return self.json_data
 
     def get_pagedata(self):
-        # print(" Grab pagedata JSON..")
         pagedata = self.body.find('div', {'id': 'pagedata'})['data-blob']
         self.json_data.append(pagedata)
 
     def get_js(self):
-        """Get <script> element containing the data we need and return the raw JS"""
-        # print(" Grabbing embedded scripts..")
         embedded_scripts_raw = [self.body.find("script", {"type": "application/ld+json"}).string]
         for script in self.body.find_all('script'):
             try:
@@ -41,28 +37,24 @@ class BandcampJSON:
             self.json_data.append(js_data)
 
     def js_to_json(self, js_data):
-        """Convert JavaScript dictionary to JSON"""
-        # print(" Converting JS to JSON..")
-        # Decode with demjson first to reformat keys and lists
         decoded_js = demjson3.decode(js_data)
         return demjson3.encode(decoded_js)
 
-def bcPlaylist(playlist_url):
-
+def bc_playlist(playlist_url):
     session = requests.Session()
     response = session.get(playlist_url)
 
     if not response.ok:
-        print("Status code: %s", response.status_code)
-        print(f"The Album/Track requested does not exist at: {url}")
+        print(f"Status code: {response.status_code}", )
+        print(f"The Album/Track requested does not exist at: {playlist_url}")
         return None, None
-    
+
     try:
         soup = bs4.BeautifulSoup(response.text, "lxml")
     except bs4.FeatureNotFound:
         soup = bs4.BeautifulSoup(response.text, "html.parser")
 
-    bandcamp_json = BandcampJSON(soup, False).generate()
+    bandcamp_json = BandcampJson(soup, False).generate()
     page_json = {}
     for entry in bandcamp_json:
         page_json = {**page_json, **json.loads(entry)}
@@ -71,11 +63,11 @@ def bcPlaylist(playlist_url):
         print("No tracks found in the playlist.")
         return None, None
 
-    thumbnailUrl = page_json.get('image')
+    thumbnail_url = page_json.get('image')
 
-    playlistRecord = {
+    playlist_record = {
         "$type": "dev.dreary.tunes.playlist",
-        "thumbnail": thumbnailUrl,
+        "thumbnail": thumbnail_url,
         "name": page_json.get('name'),
         "description": page_json.get('description'),
         "createdAt": generate_timestamp(),
@@ -86,9 +78,7 @@ def bcPlaylist(playlist_url):
         }
     }
 
-    # print_json(playlistRecord)
-
-    uploaderInfo = {
+    uploader_info = {
         "name": traverse(page_json, ['artist'], ['byArtist', 'name'], ['publisher', 'name']),
         "id": traverse(page_json, ['current', ['band_id', 'selling_band_id']], ['publisher', 'additionalProperty', {'name': 'band_id'}, 'value']),
         "url": traverse(page_json, ['byArtist', '@id'], ['publisher', '@id']),
@@ -103,8 +93,8 @@ def bcPlaylist(playlist_url):
         record = {
             "$type": "dev.dreary.tunes.track",
             "title": track.get('name') or trackinfo.get('title'),
-            "uploader": uploaderInfo,
-            "thumbnail": thumbnailUrl,
+            "uploader": uploader_info,
+            "thumbnail": thumbnail_url,
             "duration": round(trackinfo['duration']),
             "lyrics": traverse(track, ['recordingOf', 'lyrics', 'text']),
             "url": traverse(track, ['@id'], ['mainEntityOfPage']),
@@ -112,11 +102,10 @@ def bcPlaylist(playlist_url):
             "source": "Bandcamp",
             "createdAt": generate_timestamp(),
         }
-        # print_json(record)
         tracks.append(record)
-    return playlistRecord, tracks
+    return playlist_record, tracks
 
-def scPlaylist(playlist_url):
+def sc_playlist(playlist_url):
     client = SoundCloud(client_id=None)
     playlist = client.resolve(playlist_url)
 
@@ -124,7 +113,7 @@ def scPlaylist(playlist_url):
         print("No tracks found in the playlist.")
         return None, None
 
-    playlistRecord = {
+    playlist_record = {
         "$type": "dev.dreary.tunes.playlist",
         "thumbnail": playlist.artwork_url, # not working as expected, https://soundcloud.com/syzymusic2/sets/mgztop0qnt1x
         "name": playlist.title,
@@ -144,7 +133,7 @@ def scPlaylist(playlist_url):
                 track = client.get_tracks([track.id], playlist.id, playlist.secret_token)[0]
             else:
                 track = client.get_track(track.id)
-        
+
         record = {
             "$type": "dev.dreary.tunes.track",
             "title": track.title,
@@ -154,24 +143,23 @@ def scPlaylist(playlist_url):
                 "url": track.user.permalink_url,
             },
             "thumbnail": track.artwork_url, # not working as expected, https://soundcloud.com/syzymusic2/sets/mgztop0qnt1x
-            "duration": track.duration // 1000,  # ms to seconds
+            "duration": track.duration // 1000,
             "description": track.description,
             "url": track.permalink_url,
             "id": str(track.id),
             "source": "SoundCloud",
             "createdAt": generate_timestamp(),
         }
-        # print_json(record)
         tracks.append(record)
 
-    return playlistRecord, tracks
+    return playlist_record, tracks
 
-def lastInList(obj, *path):
+def last_in_list(obj, *path):
     if not isinstance(obj, list):
         return None, None
     return traverse(obj, [len(obj) - 1, *path])
 
-def ytPlaylist(playlist_url):
+def yt_playlist(playlist_url):
     print("Retrieving YouTube playlist data (yt-dlp)...")
 
     ydl_opts = {
@@ -192,18 +180,18 @@ def ytPlaylist(playlist_url):
         print("No tracks found in the playlist.")
         return None, None
 
-    pid = playlist.get('id')
+    playlist_id = playlist.get('id')
 
-    playlistRecord = {
+    playlist_record = {
         "$type": "dev.dreary.tunes.playlist",
-        "thumbnail": lastInList(playlist.get("thumbnails"), "url"),
+        "thumbnail": last_in_list(playlist.get("thumbnails"), "url"),
         "name": playlist.get('title'),
         "description": playlist.get('description'),
         "createdAt": generate_timestamp(),
         "reference": {
             "source": "YouTube",
-            "link": f'https://www.youtube.com/playlist?list={pid}' if pid else None,
-            "id": pid
+            "link": f'https://www.youtube.com/playlist?list={playlist_id}' if playlist_id else None,
+            "id": playlist_id
         }
     }
 
@@ -228,41 +216,44 @@ def ytPlaylist(playlist_url):
             "createdAt": generate_timestamp(),
         })
 
-    return playlistRecord, tracks
+    return playlist_record, tracks
 
-def processPlaylist(url):
+def process_playlist(url):
     hostname = url.split('/')[2]
     if 'soundcloud' in hostname:
-        return scPlaylist(url)
+        return sc_playlist(url)
     if 'bandcamp' in hostname:
-        return bcPlaylist(url)
+        return bc_playlist(url)
     elif 'youtu' in hostname:
-        return ytPlaylist(url)
+        return yt_playlist(url)
     else:
         print("Invalid URL")
         return None, None
 
-def findOrCreatePlaylistUri(playlistRecord, did, session, service):
-    if not playlistRecord: return None
+def find_or_create_playlist_uri(playlist_record, did, session, service):
+    if not playlist_record:
+        return None
 
     print("Searching for existing playlist record matches...")
-    existingPlaylistRecords = list_records(did, service, "dev.dreary.tunes.playlist")
+    existing_playlist_records = list_records(did, service, "dev.dreary.tunes.playlist")
 
-    for p in existingPlaylistRecords:
-        if not isinstance((ref := traverse(p, ['value', 'reference'])), dict): continue
-        if all(k in ref and ref[k] == v for k, v in playlistRecord['reference'].items()):
-            playlistUri = p['uri']
+    for p in existing_playlist_records:
+        if not isinstance((ref := traverse(p, ['value', 'reference'])), dict):
+            continue
+        if all(k in ref and ref[k] == v for k, v in playlist_record['reference'].items()):
+            playlist_uri = p['uri']
             print('No playlist record creation')
             break
     else:
-        playlistUri = create_record(session, service, 'dev.dreary.tunes.playlist', playlistRecord)
-    return playlistUri
+        playlist_uri = create_record(session, service, 'dev.dreary.tunes.playlist', playlist_record)
+    return playlist_uri
 
 def split_list(lst, chunk_size):
     return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
-def applyWrites(session, service, records):
-    if len(records) == 0: return []
+def apply_writes_batch(session, service, records):
+    if len(records) == 0:
+        return []
 
     writes = []
     for record in records:
@@ -278,101 +269,101 @@ def applyWrites(session, service, records):
             })
 
     uri = []
-    split = split_list(writes, 200)
-    l = len(split)
-    for i, records in enumerate(split):
-        response = apply_writes(session, service, records)
+    split_batches = split_list(writes, 200)
+    total_batches = len(split_batches)
+    for i, batch in enumerate(split_batches):
+        response = apply_writes(session, service, batch)
         uri.extend(traverse(response, ['results', 'uri'], get_all=True) or [])
-        print(f"{i+1}/{l} applyWrites complete")
+        print(f"{i+1}/{total_batches} applyWrites complete")
     return uri
 
-def filterTrackUri(playlistItemRecords, playlistUri, trackUris):
-    filteredItems = traverse(playlistItemRecords, ['value', {'playlist': playlistUri, 'track': trackUris}, 'track'], get_all=True, default=[])
-    return [t for t in trackUris if t not in filteredItems]
+def filter_track_uri(playlist_item_records, playlist_uri, track_uris):
+    filtered_items = traverse(playlist_item_records, ['value', {'playlist': playlist_uri, 'track': track_uris}, 'track'], get_all=True, default=[])
+    return [t for t in track_uris if t not in filtered_items]
 
 def main():
     with open('../../config.json') as f:
         config = json.load(f)
-    HANDLE = config.get('HANDLE')
-    PASSWORD = config.get('PASSWORD')
-    if not (HANDLE and PASSWORD):
+    handle = config.get('HANDLE')
+    password = config.get('PASSWORD')
+    if not (handle and password):
         print('Enter credentials in config.json')
         return
-    
-    did = resolve_handle(HANDLE)
+
+    did = resolve_handle(handle)
     service = get_service_endpoint(did)
-    session = get_session(did, PASSWORD, service)
+    session = get_session(did, password, service)
 
     if len(sys.argv) < 2:
         playlist_url = input('Input a URL: ')
-        if playlist_url == '': return
+        if playlist_url == '':
+            return
     else:
         playlist_url = sys.argv[1]
 
-    playlistRecord, tracks = processPlaylist(playlist_url)
-    # return
-    if not playlistRecord:
+    playlist_record, tracks = process_playlist(playlist_url)
+    if not playlist_record:
         return
 
-    playlistUri = findOrCreatePlaylistUri(playlistRecord, did, session, service)
-    if not playlistUri:
+    playlist_uri = find_or_create_playlist_uri(playlist_record, did, session, service)
+    if not playlist_uri:
         return
 
     print("Retrieving existing track records...")
-    trackRecords = list_records(did, service, "dev.dreary.tunes.track")
+    track_records = list_records(did, service, "dev.dreary.tunes.track")
 
     writes = []
-    trackUris = []
-    trackRecordUrlMap = {url: track["uri"] for track in trackRecords if (url := traverse(track, ['value', 'url']))}
+    track_uris = []
+    track_record_url_map = {url: track["uri"] for track in track_records if (url := traverse(track, ['value', 'url']))}
     for track in tracks:
-        if (trackUri := trackRecordUrlMap.get(track.get('url'))):
-            trackUris.append(trackUri)
+        if (track_uri := track_record_url_map.get(track.get('url'))):
+            track_uris.append(track_uri)
         else:
             writes.append(track)
 
     if writes:
-        trackUris.extend(applyWrites(session, service, writes))
+        track_uris.extend(apply_writes_batch(session, service, writes))
         print("Track applyWrites complete")
     else:
         print("No track record creation required")
 
     print("Retrieving existing playlistitem records...")
-    playlistItemRecords = list_records(did, service, "dev.dreary.tunes.playlistitem")
+    playlist_item_records = list_records(did, service, "dev.dreary.tunes.playlistitem")
 
-    finalPlaylistItem = traverse(playlistItemRecords, [{'value': {'playlist': playlistUri, 'nodes': {'nextUri': None}}}])
-    trackUris = filterTrackUri(playlistItemRecords, playlistUri, trackUris)
-    lastIndex = len(trackUris) - 1
+    final_playlist_item = traverse(playlist_item_records, [{'value': {'playlist': playlist_uri, 'nodes': {'nextUri': None}}}])
+    track_uris = filter_track_uri(playlist_item_records, playlist_uri, track_uris)
+    last_index = len(track_uris) - 1
     writes = []
-    for i, trackUri in enumerate(trackUris):
+    for i, track_uri in enumerate(track_uris):
 
-        previousUri = None
-        if finalPlaylistItem:
-            previousUri = finalPlaylistItem['uri']
-            finalPlaylistItem = finalPlaylistItem['value']
-            finalPlaylistItem['nodes']['nextUri'] = trackUri
+        previous_uri = None
+        if final_playlist_item:
+            previous_uri = final_playlist_item['uri']
+            final_playlist_item = final_playlist_item['value']
+            final_playlist_item['nodes']['nextUri'] = track_uri
             writes.append({
                 "$type": "com.atproto.repo.applyWrites#update",
                 "collection": "dev.dreary.tunes.playlistitem",
-                "rkey": decompose_uri(previousUri)[2],
-                "value": finalPlaylistItem,
+                "rkey": decompose_uri(previous_uri)[2],
+                "value": final_playlist_item,
             })
-            finalPlaylistItem = None
+            final_playlist_item = None
         else:
-            previousUri = trackUris[i-1] if i > 0 else None
+            previous_uri = track_uris[i-1] if i > 0 else None
 
         writes.append({
             "$type": "dev.dreary.tunes.playlistitem",
-            "playlist": playlistUri,
-            "track": trackUri,
+            "playlist": playlist_uri,
+            "track": track_uri,
             "createdAt": generate_timestamp(),
             "nodes": {
-                "previousUri": previousUri,
-                "nextUri": trackUris[i+1] if i < lastIndex else None
+                "previousUri": previous_uri,
+                "nextUri": track_uris[i+1] if i < last_index else None
             }
         })
 
     if writes:
-        applyWrites(session, service, writes)
+        apply_writes_batch(session, service, writes)
         print("playlistitem applyWrites complete")
     else:
         print("No playlistitem record creation required")
