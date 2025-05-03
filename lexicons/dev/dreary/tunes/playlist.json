@@ -16,6 +16,14 @@
             "dedicated": { "type": "string", "format": "did" },
             "createdAt": { "type": "string", "format": "datetime" },
             "thumbnail": { "type": "string", "format": "uri" },
+            "owners": {
+                "type": "array",
+                "items": {
+                    "name": { "type": "string" },
+                    "link": { "type": "string" },
+                    "id": { "type": "string" }
+                }
+            },
             "reference": {
                 "source": { "type": "string" },
                 "link": { "type": "string", "description": "External source playlist link." },

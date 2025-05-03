@@ -196,7 +196,7 @@ def create_shelf(session, service):
     return create_record(session, service, 'dev.dreary.library.shelf', record)
 
 def main():
-    with open('config.json') as f:
+    with open('../../config.json') as f:
         config = json.load(f)
     HANDLE = config.get('HANDLE')
     PASSWORD = config.get('PASSWORD')

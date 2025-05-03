@@ -203,7 +203,7 @@ def find_or_create_messages(messages, indexes, did, service, session, guild_uri,
         create_record(session, service, 'dev.dreary.discord.message', record, rkey=message['id'])
 
 def main():
-    with open('config.json') as f:
+    with open('../../config.json') as f:
         config = json.load(f)
     HANDLE = config.get('HANDLE')
     PASSWORD = config.get('PASSWORD')

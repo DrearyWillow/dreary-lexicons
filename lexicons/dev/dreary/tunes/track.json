@@ -12,11 +12,14 @@
         "properties": { 
             "$type": "dev.dreary.tunes.track",
             "title": { "type": "string" },
-            "uploader": {
-                "type": "object",
-                "name": { "type": "string" },
-                "id": { "type": "string" },
-                "url": { "type": "string" }
+            "artists": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "name": { "type": "string" },
+                    "id": { "type": "string" },
+                    "url": { "type": "string" }
+                }
             },
             "thumbnail": { "type": "string", "format": "uri" },
             "duration": { "type": "int", "format": "seconds" },

@@ -8,6 +8,7 @@ from bsky_utils import *
 import requests
 import bs4
 import demjson3
+from yt_dlp import YoutubeDL
 
 class BandcampJSON:
     def __init__(self, body, debugging: bool = False):
@@ -171,16 +172,21 @@ def lastInList(obj, *path):
     return traverse(obj, [len(obj) - 1, *path])
 
 def ytPlaylist(playlist_url):
+    print("Retrieving YouTube playlist data (yt-dlp)...")
 
-    print("Retrieving YouTube playlist data...")
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': False,
+        'dump_single_json': True,
+    }
 
-    result = subprocess.run(["yt-dlp", "-J", playlist_url], capture_output=True, text=True)
-    if result.returncode == 0:
-        print("Command executed successfully")
-    else:
-        print("Command failed")
-
-    playlist = json.loads(result.stdout)
+    with YoutubeDL(ydl_opts) as ydl:
+        try:
+            playlist = ydl.extract_info(playlist_url, download=False)
+            print("Playlist data retrieved successfully")
+        except Exception as e:
+            print(f"Failed to retrieve playlist: {e}")
+            return None, None
 
     if not playlist.get('entries'):
         print("No tracks found in the playlist.")
@@ -203,11 +209,9 @@ def ytPlaylist(playlist_url):
 
     tracks = []
     for track in playlist.get('entries'):
-
         if not track:
             continue
-
-        record = {
+        tracks.append({
             "$type": "dev.dreary.tunes.track",
             "title": track.get('title'),
             "uploader": {
@@ -222,9 +226,7 @@ def ytPlaylist(playlist_url):
             "id": track.get('id'),
             "source": "YouTube",
             "createdAt": generate_timestamp(),
-        }
-        # print_json(record)
-        tracks.append(record)
+        })
 
     return playlistRecord, tracks
 
@@ -259,7 +261,6 @@ def findOrCreatePlaylistUri(playlistRecord, did, session, service):
 def split_list(lst, chunk_size):
     return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
-
 def applyWrites(session, service, records):
     if len(records) == 0: return []
 
@@ -290,7 +291,7 @@ def filterTrackUri(playlistItemRecords, playlistUri, trackUris):
     return [t for t in trackUris if t not in filteredItems]
 
 def main():
-    with open('config.json') as f:
+    with open('../../config.json') as f:
         config = json.load(f)
     HANDLE = config.get('HANDLE')
     PASSWORD = config.get('PASSWORD')
@@ -309,6 +310,7 @@ def main():
         playlist_url = sys.argv[1]
 
     playlistRecord, tracks = processPlaylist(playlist_url)
+    # return
     if not playlistRecord:
         return
 
