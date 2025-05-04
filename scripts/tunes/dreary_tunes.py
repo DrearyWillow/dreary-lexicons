@@ -154,11 +154,6 @@ def sc_playlist(playlist_url):
 
     return playlist_record, tracks
 
-def last_in_list(obj, *path):
-    if not isinstance(obj, list):
-        return None, None
-    return traverse(obj, [len(obj) - 1, *path])
-
 def yt_playlist(playlist_url):
     print("Retrieving YouTube playlist data (yt-dlp)...")
 
@@ -184,7 +179,7 @@ def yt_playlist(playlist_url):
 
     playlist_record = {
         "$type": "dev.dreary.tunes.playlist",
-        "thumbnail": last_in_list(playlist.get("thumbnails"), "url"),
+        "thumbnail": traverse(playlist, ['thumbnail'], ['thumbnails', -2, 'url']),
         "name": playlist.get('title'),
         "description": playlist.get('description'),
         "createdAt": generate_timestamp(),
