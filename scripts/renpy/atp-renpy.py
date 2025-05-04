@@ -354,17 +354,20 @@ def download_renpy():
     print(f'Downloads complete. {linkify(dl_dir, file=True)}')
 
 def main():
-    mode = sys.argv[1] if (len(sys.argv) >= 2) else input('Mode? (upload/download): ')
+    mode = sys.argv[1] if (len(sys.argv) >= 2) else "--help"
     if mode == "--help":
-        print(textwrap.dedent("""
+        print(textwrap.dedent(f"""
             To upload:
             python atp-renpy.py upload [GAME FILES DIRECTORY] [PROJECT NAME]
 
             To download:
-            "python atp-renpy.py download [DOWNLOAD DIRECTORY] [PROJECT AT-URI]
+            python atp-renpy.py download [DOWNLOAD DIRECTORY] [PROJECT AT-URI]
 
             Specify 'HANDLE' and 'PASSWORD' in a .env file in the same
             directory as this script to avoid being prompted on upload
+
+            Download the Ren'Py SDK to run downloaded games:
+            {linkify('https://www.renpy.org/latest.html')}
         """))
     elif mode.upper().startswith("U"):
         upload_renpy()
