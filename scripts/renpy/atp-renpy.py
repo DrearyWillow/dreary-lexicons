@@ -60,7 +60,7 @@ def get_service_endpoint(did):
             return service.get('serviceEndpoint')
     return None
 
-def create_record(session, service_endpoint, collection, record):
+def create_record(session, service_endpoint, record):
     token = session.get('accessJwt')
     did = session.get('did')
     api = f"{service_endpoint}/xrpc/com.atproto.repo.createRecord"
@@ -71,7 +71,7 @@ def create_record(session, service_endpoint, collection, record):
     }
     payload = {
         "repo": did,
-        "collection": collection,
+        "collection": record['$type'],
         "record": record
     }
     payload = json.dumps(payload)
@@ -137,7 +137,7 @@ def create_project_record(session, service, name):
         "name": name,
         "createdAt": generate_timestamp(),
     }
-    return create_record(session, service, record['$type'], record)
+    return create_record(session, service, record)
 
 def name_prompt(name=None):
     # copied from renpy/launcher/game
@@ -206,6 +206,9 @@ def draft_asset_records(session, service, root, project_uri):
             if record:
                 records.append(record)
     return records
+
+def split_list(lst, chunk_size):
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
 def apply_writes_batch(session, service, records):
     if len(records) == 0:

@@ -143,7 +143,7 @@ def main():
     elif parts[1] == "track":
         record = process_track(token, parts[2])
         # if not record: return
-        # create_record(session, service, 'dev.dreary.tunes.track', record)
+        # create_record(session, service, record)
         return
     else:
         print(f"Link type not supported: {parts[1]}")

@@ -44,6 +44,7 @@ def find_or_create_channel(channel, did, service, session, guild_uri):
         return existing_channel['uri']
     print("No matching existing channel record found. Creating new channel record.")
     record = {
+        '$type': 'dev.dreary.discord.channel',
         'guild': guild_uri,
         'name': channel['name'],
         'type': channel['type'],
@@ -51,7 +52,7 @@ def find_or_create_channel(channel, did, service, session, guild_uri):
         'category': channel.get('category'),
         'topic': channel.get('topic')
     }
-    return create_record(session, service, 'dev.dreary.discord.channel', record, rkey=channel['id'])
+    return create_record(session, service, record, rkey=channel['id'])
 
 
 def find_or_create_guild(guild, did, service, session, base_dir, tmp_dir):
@@ -68,10 +69,11 @@ def find_or_create_guild(guild, did, service, session, base_dir, tmp_dir):
     if blob["mimeType"].split('/')[0] != "image":
         raise Exception(f"Unsupported blob type '{blob_type}'")
     record = {
+        '$type': 'dev.dreary.discord.guild',
         'name': guild['name'],
         'icon': blob
     }
-    return create_record(session, service, 'dev.dreary.discord.guild', record, rkey=guild['id'])
+    return create_record(session, service, record, rkey=guild['id'])
 
 
 def find_or_create_author(author, eauth_index, did, service, session, base_dir, tmp_dir):
@@ -87,6 +89,7 @@ def find_or_create_author(author, eauth_index, did, service, session, base_dir, 
         raise Exception(f"Unsupported blob type '{blob_type}'")
     
     record = {
+        '$type': 'dev.dreary.discord.author',
         'name': author['name'],
         'discriminator': author.get('discriminator'),
         'nickname': author.get('nickname'),
@@ -95,7 +98,7 @@ def find_or_create_author(author, eauth_index, did, service, session, base_dir, 
         'roles': author.get('roles'),
         'avatar': blob
     }
-    return create_record(session, service, 'dev.dreary.discord.author', record, rkey=author['id'])
+    return create_record(session, service, record, rkey=author['id'])
 
 def find_or_create_sticker(sticker, esticker_index, did, service, session, base_dir, tmp_dir):
     if sticker['id'] in esticker_index:
@@ -105,11 +108,12 @@ def find_or_create_sticker(sticker, esticker_index, did, service, session, base_
         raise Exception("Missing necessary sticker field: sourceUrl")
 
     record = {
+        '$type': 'dev.dreary.discord.sticker',
         'name': sticker['name'],
         'format': sticker['format'],
         'source': retrieve_json_str(sticker_path, base_dir)
     }
-    return create_record(session, service, 'dev.dreary.discord.sticker', record, rkey=sticker['id'])
+    return create_record(session, service, record, rkey=sticker['id'])
 
 
 def populate_indexes(did, service):
@@ -145,6 +149,7 @@ def find_or_create_messages(messages, indexes, did, service, session, guild_uri,
         # which has the advantage of automatically accomodating unexpected fields
         # this also has the disadvantage of automatically accomodating unexpected fields
         record = {
+            '$type': 'dev.dreary.discord.message',
             'type': message['type'],
             'timestamp': convert_timestamp_utc(message['timestamp']),
             'timestampEdited': message.get('timestampEdited'),
@@ -200,7 +205,7 @@ def find_or_create_messages(messages, indexes, did, service, session, guild_uri,
         #     record['reactions'].append(reaction_uri)
         #     indexes['reaction'][decompose_uri(reaction_uri)[2]] = reaction_uri
 
-        create_record(session, service, 'dev.dreary.discord.message', record, rkey=message['id'])
+        create_record(session, service, record, rkey=message['id'])
 
 def main():
     with open('../../config.json') as f:

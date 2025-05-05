@@ -240,7 +240,7 @@ def find_or_create_playlist_uri(playlist_record, did, session, service):
             print('No playlist record creation')
             break
     else:
-        playlist_uri = create_record(session, service, 'dev.dreary.tunes.playlist', playlist_record)
+        playlist_uri = create_record(session, service, playlist_record)
     return playlist_uri
 
 def split_list(lst, chunk_size):

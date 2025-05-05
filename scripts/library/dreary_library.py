@@ -32,7 +32,7 @@ def create_book_record(session, service, path):
 
 def create_one_book(session, service, path):
     record = create_book_record(session, service, path)
-    return create_record(session, service, 'dev.dreary.library.book', record)
+    return create_record(session, service, record)
 
 def create_book_metadata(path):
     if not path.endswith('.pdf'):
@@ -186,6 +186,7 @@ def add_books_to_shelf(session, service):
 def create_shelf(session, service):
     print("\nEnter shelf data.")
     record = {
+        "$type": 'dev.dreary.library.shelf',
         "name": input("Name: "),
         "createdAt": generate_timestamp(),
         "description": input("Description: ")
@@ -193,7 +194,7 @@ def create_shelf(session, service):
     if icon_path := input("Icon file path: "):
         record['icon'] = upload_blob(session, service, icon_path)
     print()
-    return create_record(session, service, 'dev.dreary.library.shelf', record)
+    return create_record(session, service, record)
 
 def main():
     with open('../../config.json') as f:
